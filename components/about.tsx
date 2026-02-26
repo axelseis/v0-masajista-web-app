@@ -8,7 +8,7 @@ export function About() {
           {/* Image */}
           <div className="relative aspect-[4/5] overflow-hidden">
             <Image
-              src="/images/about-sylvie.jpg"
+              src="/images/about.jpg"
               alt="Terapia de masaje profesional"
               fill
               className="object-cover"

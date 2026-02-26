@@ -1,15 +1,30 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { createBookingEvent, getAvailableSlots } from "@/lib/google-calendar"
-import { services } from "@/lib/services"
+import { services, toppings } from "@/lib/services"
+
+const toppingItemSchema = z.object({
+  id: z.string(),
+  quantity: z.number().int().min(0),
+})
 
 const bookingSchema = z.object({
   serviceId: z.string().min(1),
+  duration: z.number().min(30).max(240),
+  baseDuration: z.number().optional(),
+  toppings: z.array(toppingItemSchema).optional().default([]),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   time: z.string().regex(/^\d{2}:\d{2}$/),
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
   phone: z.string().min(6, "El teléfono debe tener al menos 6 dígitos."),
-  email: z.string().email("Email inválido."),
+  email: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || val.trim() === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
+      "Email inválido."
+    )
+    .default(""),
   notes: z.string().optional(),
 })
 
@@ -36,8 +51,28 @@ export async function POST(request: Request) {
       )
     }
 
+    const baseDuration = data.baseDuration ?? data.duration
+    const validBaseDuration = service.durations.some((d) => d.minutes === baseDuration)
+    if (!validBaseDuration) {
+      return NextResponse.json(
+        { error: "Duración base no válida para este servicio." },
+        { status: 400 }
+      )
+    }
+
+    const baseOption = service.durations.find((d) => d.minutes === baseDuration)!
+    let totalPrice = baseOption.price
+    const toppingsInfo: string[] = []
+    for (const t of data.toppings ?? []) {
+      const topping = toppings.find((top) => top.id === t.id)
+      if (topping && t.quantity > 0) {
+        totalPrice += topping.price * t.quantity
+        toppingsInfo.push(`${topping.title} x${t.quantity}`)
+      }
+    }
+
     // Verify the slot is still available (prevent double booking)
-    const slots = await getAvailableSlots(data.date, service.duration)
+    const slots = await getAvailableSlots(data.date, data.duration)
     const selectedSlot = slots.find((s) => s.time === data.time)
 
     if (!selectedSlot || !selectedSlot.available) {
@@ -53,10 +88,12 @@ export async function POST(request: Request) {
       serviceTitle: service.title,
       date: data.date,
       time: data.time,
-      duration: service.duration,
+      duration: data.duration,
+      totalPrice,
+      toppingsInfo: toppingsInfo.length > 0 ? toppingsInfo : undefined,
       name: data.name,
       phone: data.phone,
-      email: data.email,
+      email: data.email?.trim() || undefined,
       notes: data.notes,
     })
 
@@ -68,7 +105,8 @@ export async function POST(request: Request) {
         service: service.title,
         date: data.date,
         time: data.time,
-        duration: service.duration,
+        duration: data.duration,
+        price: totalPrice,
         name: data.name,
       },
     })

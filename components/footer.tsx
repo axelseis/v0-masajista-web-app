@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { Instagram } from "lucide-react"
 
 export function Footer() {
@@ -6,12 +7,10 @@ export function Footer() {
     <footer className="border-t border-border bg-background px-6 py-12">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 md:flex-row md:justify-between">
         <div className="text-center md:text-left">
-          <Link href="#inicio" className="font-serif text-xl font-semibold tracking-tight text-foreground">
-            Sylvie Le Roux
+          <Link href="#inicio" className="flex flex-col items-center md:items-start">
+            <Image src="/blau_logo.svg" alt="Sylvie Le Roux" width={36} height={16} className="h-8 w-auto" aria-hidden />
+            <Image src="/text_blau.svg" alt="Masaje" width={36} height={16} className="mt-5 h-8 w-auto" aria-hidden />
           </Link>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Terapias corporales en Barcelona
-          </p>
         </div>
 
         <div className="flex items-center gap-6">

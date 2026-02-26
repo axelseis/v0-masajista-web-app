@@ -1,20 +1,20 @@
-import Image from "next/image"
 import Link from "next/link"
+import { ChevronDown } from "lucide-react"
 
 export function Hero() {
   return (
     <section id="inicio" className="relative min-h-screen">
-      {/* Background image */}
-      <div className="absolute inset-0">
-        <Image
-          src="/images/hero-massage.jpg"
-          alt="Espacio de masaje sereno y acogedor"
-          fill
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-foreground/50" />
-      </div>
+      {/* Background image - fixed on scroll */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: "url('/images/hero2.png')",
+          backgroundAttachment: "fixed",
+        }}
+        role="img"
+        aria-label="Espacio de masaje sereno y acogedor"
+      />
+      <div className="absolute inset-0 bg-foreground/50" />
 
       {/* Content */}
       <div className="relative flex min-h-screen flex-col items-center justify-center px-6 pt-24 pb-28 text-center">
@@ -49,7 +49,10 @@ export function Hero() {
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2">
         <div className="flex flex-col items-center gap-2">
           <span className="text-xs uppercase tracking-widest text-secondary/60">Scroll</span>
-          <div className="h-12 w-px bg-secondary/30" />
+          <div className="flex flex-col items-center gap-0.5">
+            <div className="h-12 w-px bg-secondary/30" />
+            <ChevronDown className="h-4 w-4 -mt-3 -mb-1 text-secondary/60" strokeWidth={1.5} />
+          </div>
         </div>
       </div>
     </section>

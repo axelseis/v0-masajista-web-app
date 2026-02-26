@@ -56,7 +56,17 @@ export function Services() {
                         {service.description}
                       </p>
                       <span className="shrink-0 rounded-sm bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground">
-                        {service.durationLabel}
+                        {service.durations
+                          .map((d) =>
+                            d.minutes === 60
+                              ? "1 h"
+                              : d.minutes === 75
+                                ? "1 h 15 min"
+                                : d.minutes === 90
+                                  ? "1 h 30 min"
+                                  : `${d.minutes} min`
+                          )
+                          .join(" / ")}
                       </span>
                     </div>
                   </div>

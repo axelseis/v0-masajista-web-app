@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { Menu, X, Instagram } from "lucide-react"
 
@@ -21,8 +22,9 @@ export function Navbar() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href={getHref("#inicio")} className="font-serif text-2xl font-semibold tracking-tight text-foreground">
-          Sylvie Le Roux
+        <Link href={getHref("#inicio")} className="flex items-center gap-3">
+          <Image src="/blau_logo.svg" alt="" width={36} height={16} className="h-4 w-auto" aria-hidden />
+          <Image src="/text_blau.svg" alt="Sylvie Le Roux" width={140} height={42} className="h-6 w-auto" />
         </Link>
 
         {/* Desktop nav */}
