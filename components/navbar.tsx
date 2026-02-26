@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Menu, X, Instagram } from "lucide-react"
 
 const navLinks = [
@@ -13,11 +14,14 @@ const navLinks = [
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
+  const pathname = usePathname()
+  const isHome = pathname === "/"
+  const getHref = (hash: string) => (isHome ? hash : `/${hash}`)
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="#inicio" className="font-serif text-2xl font-semibold tracking-tight text-foreground">
+        <Link href={getHref("#inicio")} className="font-serif text-2xl font-semibold tracking-tight text-foreground">
           Sylvie Le Roux
         </Link>
 
@@ -26,7 +30,7 @@ export function Navbar() {
           {navLinks.map((link) => (
             <Link
               key={link.href}
-              href={link.href}
+              href={getHref(link.href)}
               className="text-sm tracking-wide text-muted-foreground transition-colors hover:text-foreground"
             >
               {link.label}
@@ -66,7 +70,7 @@ export function Navbar() {
             {navLinks.map((link) => (
               <Link
                 key={link.href}
-                href={link.href}
+                href={getHref(link.href)}
                 onClick={() => setIsOpen(false)}
                 className="text-base tracking-wide text-muted-foreground transition-colors hover:text-foreground"
               >

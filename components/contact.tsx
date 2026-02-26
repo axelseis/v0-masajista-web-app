@@ -80,7 +80,7 @@ export function Contact() {
           <div className="relative overflow-hidden rounded-sm">
             <iframe
               title="Ubicación de Sylvie Le Roux Masaje en Barcelona"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2992.2!2d2.189!3d41.435!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12a4bcf0!2sSant+Andreu+Barcelona!5e0!3m2!1ses!2ses!4v1700000000000"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2982.748!2d2.1751327!3d41.4115539!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12a4a31f7661c309%3A0x53c0f732d39b3f97!2sMasaje+Californiano+y+Deep+Tissue!5e0!3m2!1sen!2ses!4v1700000000000"
               width="100%"
               height="100%"
               style={{ border: 0, minHeight: "400px" }}

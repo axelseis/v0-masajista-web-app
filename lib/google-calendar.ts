@@ -13,7 +13,19 @@ function getCalendarClient() {
     )
   }
 
-  const auth = new google.auth.JWT(email, undefined, key, SCOPES)
+  const subject = process.env.GOOGLE_WORKSPACE_USER_EMAIL
+  
+  if (!subject) {
+    throw new Error("GOOGLE_WORKSPACE_USER_EMAIL is required for domain-wide delegation.")
+  }
+
+  const auth = new google.auth.JWT({
+    email,
+    key: key,
+    scopes: SCOPES,
+    subject,  // ← impersona a este usuario de Workspace
+  })
+
   const calendar = google.calendar({ version: "v3", auth })
 
   return { calendar, calendarId }

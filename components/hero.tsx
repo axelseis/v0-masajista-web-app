@@ -17,7 +17,7 @@ export function Hero() {
       </div>
 
       {/* Content */}
-      <div className="relative flex min-h-screen flex-col items-center justify-center px-6 text-center">
+      <div className="relative flex min-h-screen flex-col items-center justify-center px-6 pt-24 pb-28 text-center">
         <p className="mb-4 text-sm uppercase tracking-[0.3em] text-secondary/80">
           Terapias Corporales en Barcelona
         </p>
@@ -37,9 +37,7 @@ export function Hero() {
             Descubrir Servicios
           </Link>
           <Link
-            href="https://wa.me/34695544840"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/reservas"
             className="rounded-sm border border-secondary/40 px-8 py-3 text-sm font-medium uppercase tracking-widest text-secondary transition-colors hover:bg-secondary/10"
           >
             Reservar Cita
@@ -48,7 +46,7 @@ export function Hero() {
       </div>
 
       {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2">
         <div className="flex flex-col items-center gap-2">
           <span className="text-xs uppercase tracking-widest text-secondary/60">Scroll</span>
           <div className="h-12 w-px bg-secondary/30" />
