@@ -8,7 +8,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react"
-import { translations, type Translations } from "./translations"
+import { translations } from "./translations"
 
 export type Locale = "es" | "en" | "fr"
 
@@ -19,7 +19,7 @@ const STORAGE_KEY = "preferred-locale"
 interface LanguageContextValue {
   locale: Locale
   setLocale: (l: Locale) => void
-  t: Translations
+  t: (typeof translations)[Locale]
 }
 
 const LanguageContext = createContext<LanguageContextValue>({
@@ -33,17 +33,16 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as Locale | null
-    let next: Locale | null = null
-    if (stored && stored in translations) {
-      next = stored
-    } else {
-      const browserLang = navigator.language.slice(0, 2) as Locale
-      if (browserLang in translations) next = browserLang
-    }
-    if (next) {
-      document.documentElement.lang = next
-      queueMicrotask(() => setLocaleState(next!))
-    }
+    const resolved: Locale =
+      stored && stored in translations
+        ? stored
+        : (navigator.language.slice(0, 2) in translations
+            ? (navigator.language.slice(0, 2) as Locale)
+            : "es")
+    queueMicrotask(() => {
+      setLocaleState(resolved)
+      document.documentElement.lang = resolved
+    })
   }, [])
 
   const setLocale = useCallback((l: Locale) => {
