@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Cormorant_Garamond, Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { Providers } from '@/components/providers'
 import './globals.css'
 
 const _cormorant = Cormorant_Garamond({
@@ -39,7 +40,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#b5704f',
+  themeColor: '#2f6c80',
 }
 
 export default function RootLayout({
@@ -50,7 +51,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${_cormorant.variable} ${_inter.variable} font-sans antialiased`}>
-        {children}
+        <Providers>{children}</Providers>
         <Analytics />
       </body>
     </html>

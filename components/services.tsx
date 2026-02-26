@@ -3,29 +3,37 @@
 import { useState } from "react"
 import { ChevronDown } from "lucide-react"
 import { services } from "@/lib/services"
+import { useLanguage } from "@/lib/i18n"
 
 export function Services() {
   const [openIndex, setOpenIndex] = useState<number | null>(0)
+  const { t } = useLanguage()
+
+  const localizedServices = services.map((s) => {
+    const item = t.serviceItems[s.id as keyof typeof t.serviceItems]
+    return item
+      ? { ...s, title: item.title, description: item.description }
+      : s
+  })
 
   return (
     <section id="servicios" className="bg-background px-6 py-24 md:py-32 relative">
       <div className="mx-auto max-w-4xl">
         <p className="mb-3 text-sm uppercase tracking-[0.3em] text-muted-foreground">
-          Servicios
+          {t.services.label}
         </p>
         <h2 className="font-serif text-4xl font-light text-foreground md:text-5xl lg:text-6xl">
-          <span className="text-balance">Tratamientos para tu bienestar</span>
+          <span className="text-balance">{t.services.title}</span>
         </h2>
         <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
-          Cada sesión es un viaje único, adaptado a lo que tu cuerpo pide en ese momento. Descubre las técnicas que ofrezco para ayudarte a soltar, respirar y reconectarte.
+          {t.services.description}
         </p>
 
-        {/* Service accordion */}
         <div className="mt-16 divide-y divide-border">
-          {services.map((service, index) => {
+          {localizedServices.map((service, index) => {
             const isOpen = openIndex === index
             return (
-              <div key={service.title} className="group">
+              <div key={service.id} className="group">
                 <button
                   onClick={() => setOpenIndex(isOpen ? null : index)}
                   className="flex w-full items-center justify-between py-6 text-left transition-colors"

@@ -1,6 +1,11 @@
+"use client"
+
 import Link from "next/link"
+import { useLanguage } from "@/lib/i18n"
 
 export function CtaSection() {
+  const { t } = useLanguage()
+
   return (
     <section className="relative px-6 py-24 md:py-32">
       <div className="absolute inset-0">
@@ -9,20 +14,20 @@ export function CtaSection() {
 
       <div className="relative mx-auto max-w-3xl text-center">
         <p className="mb-3 text-sm uppercase tracking-[0.3em] text-secondary/70">
-          Tu momento de calma
+          {t.cta.label}
         </p>
         <h2 className="font-serif text-4xl font-light text-secondary md:text-5xl lg:text-6xl">
-          <span className="text-balance">{"¿Lista para reconectarte?"}</span>
+          <span className="text-balance">{t.cta.title}</span>
         </h2>
         <p className="mx-auto mt-6 max-w-lg text-base leading-relaxed text-secondary/80">
-          Reserva tu sesión y regálate un espacio de bienestar. Se requiere reserva previa y se recomienda avisar con más de 12 horas de antelación para cancelaciones.
+          {t.cta.description}
         </p>
         <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Link
             href="/reservas"
             className="inline-flex items-center gap-2 rounded-sm bg-primary px-8 py-3 text-sm font-medium uppercase tracking-widest text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Reservar cita online
+            {t.cta.bookOnline}
           </Link>
           <Link
             href="https://wa.me/34600000000"
