@@ -1,16 +1,9 @@
-import Image from "next/image"
 import Link from "next/link"
 
 export function CtaSection() {
   return (
     <section className="relative px-6 py-24 md:py-32">
       <div className="absolute inset-0">
-        <Image
-          src="/images/massage-detail.jpg"
-          alt="Detalle de spa con aceites y elementos naturales"
-          fill
-          className="object-cover"
-        />
         <div className="absolute inset-0 bg-foreground/60" />
       </div>
 

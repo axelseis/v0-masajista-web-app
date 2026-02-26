@@ -6,7 +6,7 @@ export function Hero() {
     <section id="inicio" className="relative min-h-screen">
       {/* Background image - fixed on scroll */}
       <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: "url('/images/hero2.png')",
           backgroundAttachment: "fixed",

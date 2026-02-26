@@ -8,7 +8,7 @@ export function Services() {
   const [openIndex, setOpenIndex] = useState<number | null>(0)
 
   return (
-    <section id="servicios" className="bg-background px-6 py-24 md:py-32">
+    <section id="servicios" className="bg-background px-6 py-24 md:py-32 relative">
       <div className="mx-auto max-w-4xl">
         <p className="mb-3 text-sm uppercase tracking-[0.3em] text-muted-foreground">
           Servicios

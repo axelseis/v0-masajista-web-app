@@ -31,7 +31,7 @@ export async function Testimonials() {
       : FALLBACK_TESTIMONIALS
 
   return (
-    <section className="bg-background px-6 py-24 md:py-32">
+    <section className="bg-background px-6 py-24 md:py-32 relative">
       <div className="mx-auto max-w-6xl">
         <div className="text-center">
           <p className="mb-3 text-sm uppercase tracking-[0.3em] text-muted-foreground">
