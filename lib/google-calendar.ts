@@ -117,6 +117,103 @@ export async function getAvailableSlots(
   return slots
 }
 
+/**
+ * Returns which days in a month have at least one available slot.
+ * Single freebusy query for the entire month.
+ */
+export async function getAvailableDaysForMonth(
+  monthStr: string, // YYYY-MM
+  durationMinutes: number
+): Promise<Record<string, boolean>> {
+  const { calendar, calendarId } = getCalendarClient()
+
+  const [year, month] = monthStr.split("-").map(Number)
+  const lastDay = new Date(year, month, 0)
+
+  const timeMin = new Date(
+    `${year}-${String(month).padStart(2, "0")}-01T09:00:00+01:00`
+  ).toISOString()
+  const timeMax = new Date(
+    `${year}-${String(month).padStart(2, "0")}-${String(lastDay.getDate()).padStart(2, "0")}T22:00:00+01:00`
+  ).toISOString()
+
+  const freeBusyResponse = await calendar.freebusy.query({
+    requestBody: {
+      timeMin,
+      timeMax,
+      timeZone: "Europe/Madrid",
+      items: [{ id: calendarId }],
+    },
+  })
+
+  const busyPeriods =
+    freeBusyResponse.data.calendars?.[calendarId]?.busy || []
+
+  const now = new Date()
+  const madridParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Madrid",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })
+    .formatToParts(now)
+    .reduce((acc, p) => ({ ...acc, [p.type]: p.value }), {} as Record<string, string>)
+  const madridDateStr = `${madridParts.year}-${madridParts.month}-${madridParts.day}`
+
+  const result: Record<string, boolean> = {}
+  const startMinutes = 9 * 60
+  const endMinutes = 20 * 60 + 15
+  const closingHour = 22
+
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`
+
+    let minSlotStart: Date | null = null
+    if (dateStr === madridDateStr) {
+      const h = parseInt(madridParts.hour, 10)
+      const m = parseInt(madridParts.minute, 10)
+      const minStart = new Date(
+        dateStr + `T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00+01:00`
+      )
+      minSlotStart = new Date(minStart.getTime() + 60 * 60 * 1000)
+    }
+
+    let hasSlot = false
+    for (let totalMins = startMinutes; totalMins < endMinutes && !hasSlot; totalMins += 15) {
+      const h = Math.floor(totalMins / 60)
+      const m = totalMins % 60
+      const slotStart = new Date(
+        dateStr + `T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00+01:00`
+      )
+      const slotEnd = new Date(slotStart.getTime() + durationMinutes * 60 * 1000)
+
+      const closingTime = new Date(
+        dateStr + `T${String(closingHour).padStart(2, "0")}:00:00+01:00`
+      )
+      if (slotEnd > closingTime) continue
+
+      const tooSoon = minSlotStart && slotStart < minSlotStart
+      if (tooSoon) continue
+
+      const isOverlapping = busyPeriods.some((busy) => {
+        const busyStart = new Date(busy.start!)
+        const busyEnd = new Date(busy.end!)
+        return slotStart < busyEnd && slotEnd > busyStart
+      })
+
+      if (!isOverlapping) {
+        hasSlot = true
+      }
+    }
+    result[dateStr] = hasSlot
+  }
+
+  return result
+}
+
 export interface BookingData {
   service: string
   serviceTitle: string

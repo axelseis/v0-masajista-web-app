@@ -26,6 +26,7 @@ import {
   Minus,
 } from "lucide-react"
 import { es } from "date-fns/locale"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
 
 const serviceIcons: Record<string, React.ElementType> = {
@@ -102,6 +103,9 @@ export function BookingStepper() {
     email: "",
     notes: "",
   })
+  const [calendarMonth, setCalendarMonth] = useState<Date>(() => new Date())
+  const [availableDays, setAvailableDays] = useState<Record<string, boolean>>({})
+  const [, setLoadingMonthAvailability] = useState(false)
 
   const fetchSlots = useCallback(
     async (date: Date, duration: number) => {
@@ -124,6 +128,29 @@ export function BookingStepper() {
         setSlots([])
       } finally {
         setLoadingSlots(false)
+      }
+    },
+    []
+  )
+
+  const fetchMonthAvailability = useCallback(
+    async (month: Date, duration: number) => {
+      setLoadingMonthAvailability(true)
+      try {
+        const monthStr = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}`
+        const res = await fetch(
+          `/api/availability/month?month=${monthStr}&duration=${duration}`
+        )
+        const data = await res.json()
+        if (res.ok) {
+          setAvailableDays(data.days)
+        } else {
+          setAvailableDays({})
+        }
+      } catch {
+        setAvailableDays({})
+      } finally {
+        setLoadingMonthAvailability(false)
       }
     },
     []
@@ -152,6 +179,12 @@ export function BookingStepper() {
       fetchSlots(selectedDate, totalDuration)
     }
   }, [currentStep, selectedDate, totalDuration, fetchSlots])
+
+  useEffect(() => {
+    if (currentStep === 3 && totalDuration > 0) {
+      fetchMonthAvailability(calendarMonth, totalDuration)
+    }
+  }, [currentStep, calendarMonth, totalDuration, fetchMonthAvailability])
 
   const handleSubmit = async () => {
     if (!selectedService || !selectedDuration || !selectedDate || !selectedTime) return
@@ -208,6 +241,8 @@ export function BookingStepper() {
     setBookingResult(null)
     setError(null)
     setFormData({ name: "", phone: "", email: "", notes: "" })
+    setCalendarMonth(new Date())
+    setAvailableDays({})
   }
 
   const handleServiceSelect = (service: Service) => {
@@ -220,7 +255,8 @@ export function BookingStepper() {
       const current = prev[toppingId] ?? 0
       const next = Math.max(0, current + delta)
       if (next === 0) {
-        const { [toppingId]: _, ...rest } = prev
+        const rest = { ...prev }
+        delete rest[toppingId]
         return rest
       }
       return { ...prev, [toppingId]: next }
@@ -236,7 +272,10 @@ export function BookingStepper() {
   const disabledDays = (date: Date) => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    return date < today
+    if (date < today) return true
+    const dateStr = toLocalDateString(date)
+    if (availableDays[dateStr] === false) return true
+    return false
   }
 
   // Success state
@@ -312,7 +351,7 @@ export function BookingStepper() {
             Nueva reserva
           </Button>
           <Button asChild>
-            <a href="/">Volver al inicio</a>
+            <Link href="/">Volver al inicio</Link>
           </Button>
         </div>
       </div>
@@ -402,7 +441,7 @@ export function BookingStepper() {
                   key={service.id}
                   onClick={() => handleServiceSelect(service)}
                   className={cn(
-                    "group flex flex-col gap-4 rounded-lg border-2 p-6 text-left transition-all duration-200",
+                    "group flex cursor-pointer flex-col gap-4 rounded-lg border-2 p-6 text-left transition-all duration-200",
                     isSelected
                       ? "border-primary bg-primary/5"
                       : "border-border bg-card hover:border-primary/40 hover:bg-card"
@@ -486,7 +525,7 @@ export function BookingStepper() {
                     type="button"
                     onClick={() => setSelectedDuration(d)}
                     className={cn(
-                      "rounded-lg border-2 px-4 py-3 text-center text-sm font-medium transition-all duration-200",
+                      "cursor-pointer rounded-lg border-2 px-4 py-3 text-center text-sm font-medium transition-all duration-200",
                       isSelected
                         ? "border-primary bg-primary text-primary-foreground"
                         : "border-border bg-card text-foreground hover:border-primary/40"
@@ -610,6 +649,8 @@ export function BookingStepper() {
                   selected={selectedDate}
                   onSelect={handleDateSelect}
                   disabled={disabledDays}
+                  month={calendarMonth}
+                  onMonthChange={setCalendarMonth}
                   locale={es}
                   className="text-foreground"
                 />
@@ -644,8 +685,8 @@ export function BookingStepper() {
                         !slot.available
                           ? "cursor-not-allowed border-border bg-muted text-muted-foreground line-through opacity-50"
                           : selectedTime === slot.time
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border bg-card text-foreground hover:border-primary/40"
+                            ? "cursor-pointer border-primary bg-primary text-primary-foreground"
+                            : "cursor-pointer border-border bg-card text-foreground hover:border-primary/40"
                       )}
                     >
                       {slot.time}
