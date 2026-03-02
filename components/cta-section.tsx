@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useLanguage } from "@/lib/i18n"
+import { useLanguage } from "@/locale/i18n"
 
 export function CtaSection() {
   const { t } = useLanguage()

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { ChevronDown } from "lucide-react"
 import { services } from "@/lib/services"
-import { useLanguage } from "@/lib/i18n"
+import { useLanguage } from "@/locale/i18n"
 
 export function Services() {
   const [openIndex, setOpenIndex] = useState<number | null>(0)

@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { useLanguage } from "@/lib/i18n"
+import { useLanguage } from "@/locale/i18n"
 
 export function About() {
   const { t } = useLanguage()

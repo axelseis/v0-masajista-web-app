@@ -1,6 +1,6 @@
 "use client"
 
-import { LanguageProvider } from "@/lib/i18n"
+import { LanguageProvider } from "@/locale/i18n"
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return <LanguageProvider>{children}</LanguageProvider>

@@ -1,7 +1,7 @@
 "use client"
 
 import { Quote } from "lucide-react"
-import { useLanguage } from "@/lib/i18n"
+import { useLanguage } from "@/locale/i18n"
 
 interface Testimonial {
   text: string

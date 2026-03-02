@@ -2,7 +2,7 @@
 
 import { MapPin, Clock, Phone, Instagram } from "lucide-react"
 import Link from "next/link"
-import { useLanguage } from "@/lib/i18n"
+import { useLanguage } from "@/locale/i18n"
 
 export function Contact() {
   const { t } = useLanguage()

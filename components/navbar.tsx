@@ -5,7 +5,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { Menu, X, Instagram, Globe } from "lucide-react"
-import { useLanguage, LOCALES, type Locale } from "@/lib/i18n"
+import { useLanguage, LOCALES, type Locale } from "@/locale/i18n"
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)

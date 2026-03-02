@@ -1,6 +1,6 @@
 "use client"
 
-import { useLanguage } from "@/lib/i18n"
+import { useLanguage } from "@/locale/i18n"
 
 export function ReservasHeader() {
   const { t } = useLanguage()
