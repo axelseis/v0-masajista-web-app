@@ -5,7 +5,7 @@ export interface Topping {
   price: number
 }
 
-export const toppings: Topping[] = [
+export const defaultToppings: Topping[] = [
   { id: "pies", title: "Masaje de pies", duration: 15, price: 12 },
   { id: "manos-brazos", title: "Masaje de manos y brazos", duration: 15, price: 12 },
   { id: "cuello-cervicales", title: "Masaje de cuello y cervicales", duration: 15, price: 12 },
@@ -18,6 +18,7 @@ export interface Service {
   shortDescription: string
   description: string
   durations: { minutes: number; price: number }[]
+  toppings: Topping[]
 }
 
 export const services: Service[] = [
@@ -33,6 +34,7 @@ export const services: Service[] = [
       { minutes: 75, price: 60 },
       { minutes: 90, price: 70 },
     ],
+    toppings: defaultToppings,
   },
   {
     id: "californiano-4-manos",
@@ -46,6 +48,7 @@ export const services: Service[] = [
       { minutes: 75, price: 120 },
       { minutes: 90, price: 140 },
     ],
+    toppings: [],
   },
   {
     id: "deep-tissue",
@@ -59,6 +62,7 @@ export const services: Service[] = [
       { minutes: 75, price: 60 },
       { minutes: 90, price: 70 },
     ],
+    toppings: defaultToppings,
   },
   {
     id: "descontracturante",
@@ -72,6 +76,7 @@ export const services: Service[] = [
       { minutes: 75, price: 60 },
       { minutes: 90, price: 70 },
     ],
+    toppings: defaultToppings,
   },
   {
     id: "neurosedante",
@@ -85,6 +90,7 @@ export const services: Service[] = [
       { minutes: 75, price: 55 },
       { minutes: 90, price: 65 },
     ],
+    toppings: defaultToppings,
   },
   {
     id: "acompanamiento",
@@ -98,5 +104,6 @@ export const services: Service[] = [
       { minutes: 75, price: 65 },
       { minutes: 90, price: 75 },
     ],
+    toppings: defaultToppings,
   },
 ]

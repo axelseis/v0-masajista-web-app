@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { services, toppings, type Service } from "@/lib/services"
+import { services, type Service } from "@/lib/services"
 import type { TimeSlot } from "@/lib/google-calendar"
 import {
   ArrowLeft,
@@ -25,9 +25,13 @@ import {
   Plus,
   Minus,
 } from "lucide-react"
-import { es } from "date-fns/locale"
+import { es, enUS, fr } from "date-fns/locale"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { useLanguage } from "@/locale/i18n"
+
+const dateFnsLocales = { es, en: enUS, fr } as const
+const intlLocales = { es: "es-ES", en: "en-GB", fr: "fr-FR" } as const
 
 const serviceIcons: Record<string, React.ElementType> = {
   californiano: Waves,
@@ -38,11 +42,14 @@ const serviceIcons: Record<string, React.ElementType> = {
   acompanamiento: Heart,
 }
 
-function formatDuration(minutes: number): string {
-  if (minutes === 60) return "1 h"
-  if (minutes === 75) return "1 h 15 min"
-  if (minutes === 90) return "1 h 30 min"
-  return `${minutes} min`
+function formatDuration(
+  minutes: number,
+  d: { "1h": string; "1h15": string; "1h30": string; min: string }
+): string {
+  if (minutes === 60) return d["1h"]
+  if (minutes === 75) return d["1h15"]
+  if (minutes === 90) return d["1h30"]
+  return `${minutes} ${d.min}`
 }
 
 function toLocalDateString(date: Date): string {
@@ -52,20 +59,16 @@ function toLocalDateString(date: Date): string {
   return `${y}-${m}-${d}`
 }
 
-function formatTotalDuration(minutes: number): string {
-  if (minutes < 60) return `${minutes} min`
+function formatTotalDuration(
+  minutes: number,
+  d: { "1h": string; "1h15": string; "1h30": string; min: string }
+): string {
+  if (minutes < 60) return `${minutes} ${d.min}`
   const h = Math.floor(minutes / 60)
   const m = minutes % 60
   if (m === 0) return `${h} h`
-  return `${h} h ${m} min`
+  return `${h} h ${m} ${d.min}`
 }
-
-const steps = [
-  { id: 1, label: "Masaje", icon: Hand },
-  { id: 2, label: "Duración", icon: Clock },
-  { id: 3, label: "Fecha", icon: CalendarDays },
-  { id: 4, label: "Datos", icon: User },
-]
 
 interface FormData {
   name: string
@@ -75,6 +78,7 @@ interface FormData {
 }
 
 interface BookingResult {
+  serviceId?: string
   service: string
   date: string
   time: string
@@ -85,7 +89,16 @@ interface BookingResult {
 
 type DurationOption = { minutes: number; price: number }
 
+const stepIcons = [Hand, Clock, CalendarDays, User] as const
+
 export function BookingStepper() {
+  const { locale, t } = useLanguage()
+  const steps = [
+    { id: 1, label: t.booking.steps.massage, icon: stepIcons[0] },
+    { id: 2, label: t.booking.steps.duration, icon: stepIcons[1] },
+    { id: 3, label: t.booking.steps.date, icon: stepIcons[2] },
+    { id: 4, label: t.booking.steps.data, icon: stepIcons[3] },
+  ]
   const [currentStep, setCurrentStep] = useState(1)
   const [selectedService, setSelectedService] = useState<Service | null>(null)
   const [selectedDuration, setSelectedDuration] = useState<DurationOption | null>(null)
@@ -120,17 +133,17 @@ export function BookingStepper() {
         if (res.ok) {
           setSlots(data.slots)
         } else {
-          setError(data.error || "Error al cargar disponibilidad.")
+          setError(data.error || t.booking.errors.loadAvailability)
           setSlots([])
         }
       } catch {
-        setError("Error de conexión. Inténtalo de nuevo.")
+        setError(t.booking.errors.connection)
         setSlots([])
       } finally {
         setLoadingSlots(false)
       }
     },
-    []
+    [t]
   )
 
   const fetchMonthAvailability = useCallback(
@@ -156,15 +169,16 @@ export function BookingStepper() {
     []
   )
 
+  const serviceToppings = selectedService?.toppings ?? []
   const totalDuration =
     (selectedDuration?.minutes ?? 0) +
-    toppings.reduce(
+    serviceToppings.reduce(
       (sum, t) => sum + (selectedToppings[t.id] ?? 0) * t.duration,
       0
     )
   const totalPrice =
     (selectedDuration?.price ?? 0) +
-    toppings.reduce(
+    serviceToppings.reduce(
       (sum, t) => sum + (selectedToppings[t.id] ?? 0) * t.price,
       0
     )
@@ -192,7 +206,7 @@ export function BookingStepper() {
     setSubmitting(true)
     setError(null)
 
-    const toppingsPayload = toppings
+    const toppingsPayload = (selectedService.toppings ?? [])
       .filter((t) => (selectedToppings[t.id] ?? 0) > 0)
       .map((t) => ({ id: t.id, quantity: selectedToppings[t.id] ?? 0 }))
 
@@ -221,10 +235,10 @@ export function BookingStepper() {
         setBookingResult(data.booking)
         setCurrentStep(5) // Success step
       } else {
-        setError(data.error || "Error al crear la reserva.")
+        setError(data.error || t.booking.errors.createBooking)
       }
     } catch {
-      setError("Error de conexión. Inténtalo de nuevo.")
+      setError(t.booking.errors.connection)
     } finally {
       setSubmitting(false)
     }
@@ -248,6 +262,7 @@ export function BookingStepper() {
   const handleServiceSelect = (service: Service) => {
     setSelectedService(service)
     setSelectedDuration(null)
+    setSelectedToppings({})
   }
 
   const setToppingQuantity = (toppingId: string, delta: number) => {
@@ -280,6 +295,7 @@ export function BookingStepper() {
 
   // Success state
   if (currentStep === 5 && bookingResult) {
+    const intlLocale = intlLocales[locale]
     return (
       <div className="flex flex-col items-center gap-8 py-12 text-center">
         <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
@@ -287,26 +303,28 @@ export function BookingStepper() {
         </div>
         <div>
           <h2 className="font-serif text-3xl font-light text-foreground md:text-4xl">
-            Reserva confirmada
+            {t.booking.success.title}
           </h2>
           <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-            Hemos registrado tu cita correctamente. Te esperamos.
+            {t.booking.success.message}
           </p>
         </div>
         <div className="w-full max-w-sm rounded-lg border border-border bg-card p-6">
           <dl className="flex flex-col gap-4 text-left text-sm">
             <div className="flex justify-between">
-              <dt className="text-muted-foreground">Servicio</dt>
+              <dt className="text-muted-foreground">{t.booking.success.service}</dt>
               <dd className="font-medium text-foreground">
-                {bookingResult.service}
+                {bookingResult.serviceId
+                  ? (t.serviceItems[bookingResult.serviceId as keyof typeof t.serviceItems]?.title ?? bookingResult.service)
+                  : bookingResult.service}
               </dd>
             </div>
             <div className="h-px bg-border" />
             <div className="flex justify-between">
-              <dt className="text-muted-foreground">Fecha</dt>
+              <dt className="text-muted-foreground">{t.booking.success.date}</dt>
               <dd className="font-medium text-foreground">
                 {new Date(bookingResult.date + "T12:00:00").toLocaleDateString(
-                  "es-ES",
+                  intlLocale,
                   {
                     weekday: "long",
                     day: "numeric",
@@ -317,23 +335,23 @@ export function BookingStepper() {
             </div>
             <div className="h-px bg-border" />
             <div className="flex justify-between">
-              <dt className="text-muted-foreground">Hora</dt>
+              <dt className="text-muted-foreground">{t.booking.success.time}</dt>
               <dd className="font-medium text-foreground">
                 {bookingResult.time}h
               </dd>
             </div>
             <div className="h-px bg-border" />
             <div className="flex justify-between">
-              <dt className="text-muted-foreground">Duración</dt>
+              <dt className="text-muted-foreground">{t.booking.success.duration}</dt>
               <dd className="font-medium text-foreground">
-                {bookingResult.duration} min
+                {bookingResult.duration} {t.booking.duration.min}
               </dd>
             </div>
             {bookingResult.price != null && (
               <>
                 <div className="h-px bg-border" />
                 <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Precio total</dt>
+                  <dt className="text-muted-foreground">{t.booking.success.totalPrice}</dt>
                   <dd className="font-medium text-foreground">
                     {bookingResult.price} €
                   </dd>
@@ -343,15 +361,14 @@ export function BookingStepper() {
           </dl>
         </div>
         <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
-          Recuerda: se requiere avisar con más de 12 horas de antelación para
-          cancelaciones.
+          {t.booking.success.cancelReminder}
         </p>
         <div className="flex gap-4">
           <Button variant="outline" onClick={handleReset}>
-            Nueva reserva
+            {t.booking.success.newBooking}
           </Button>
           <Button asChild>
-            <Link href="/">Volver al inicio</Link>
+            <Link href="/">{t.booking.success.backHome}</Link>
           </Button>
         </div>
       </div>
@@ -361,7 +378,7 @@ export function BookingStepper() {
   return (
     <div className="flex flex-col gap-10">
       {/* Stepper indicator */}
-      <nav aria-label="Progreso de reserva" className="mx-auto w-full max-w-lg">
+      <nav aria-label={t.booking.progressAria} className="mx-auto w-full max-w-lg">
         <ol className="flex items-center justify-between">
           {steps.map((step, index) => {
             const isActive = currentStep === step.id
@@ -423,12 +440,10 @@ export function BookingStepper() {
         <div className="flex flex-col gap-6">
           <div className="text-center">
             <h2 className="font-serif text-2xl font-light text-foreground md:text-3xl">
-              <span className="text-balance">
-                {"¿Qué tratamiento necesitas?"}
-              </span>
+              <span className="text-balance">{t.booking.step1.title}</span>
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Selecciona el tipo de masaje para tu sesión
+              {t.booking.step1.subtitle}
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
@@ -436,6 +451,9 @@ export function BookingStepper() {
               const Icon = serviceIcons[service.id] || Hand
               const isSelected = selectedService?.id === service.id
               const minPrice = service.durations[0]?.price
+              const serviceT = t.serviceItems[service.id as keyof typeof t.serviceItems]
+              const title = serviceT?.title ?? service.title
+              const shortDesc = serviceT?.shortDescription ?? service.shortDescription
               return (
                 <button
                   key={service.id}
@@ -467,16 +485,16 @@ export function BookingStepper() {
                             : "bg-secondary text-muted-foreground"
                         )}
                       >
-                        Desde {minPrice} €
+                        {t.booking.step1.from} {minPrice} €
                       </span>
                     )}
                   </div>
                   <div>
                     <h3 className="font-serif text-lg font-medium text-foreground">
-                      {service.title}
+                      {title}
                     </h3>
                     <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                      {service.shortDescription}
+                      {shortDesc}
                     </p>
                   </div>
                 </button>
@@ -489,7 +507,7 @@ export function BookingStepper() {
               disabled={!selectedService}
               className="gap-2"
             >
-              Continuar
+              {t.booking.step1.continue}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
@@ -497,25 +515,27 @@ export function BookingStepper() {
       )}
 
       {/* Step 2: Duración + toppings */}
-      {currentStep === 2 && (
+      {currentStep === 2 && selectedService && (
         <div className="flex flex-col gap-6">
           <div className="text-center">
             <h2 className="font-serif text-2xl font-light text-foreground md:text-3xl">
               <span className="text-balance">
-                Duración y toppings
+                {selectedService.toppings && selectedService.toppings.length > 0
+                  ? t.booking.step2.titleWithToppings
+                  : t.booking.step2.title}
               </span>
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              {selectedService?.title}
+              {t.serviceItems[selectedService.id as keyof typeof t.serviceItems]?.title ?? selectedService.title}
             </p>
           </div>
 
           <div className="flex flex-col gap-3">
             <p className="text-sm font-medium text-foreground">
-              Selecciona la duración del masaje
+              {t.booking.step2.selectDuration}
             </p>
             <div className="flex flex-wrap gap-2">
-              {selectedService?.durations.map((d) => {
+              {selectedService.durations.map((d) => {
                 const isSelected =
                   selectedDuration?.minutes === d.minutes &&
                   selectedDuration?.price === d.price
@@ -531,20 +551,22 @@ export function BookingStepper() {
                         : "border-border bg-card text-foreground hover:border-primary/40"
                     )}
                   >
-                    {formatDuration(d.minutes)} — {d.price} €
+                    {formatDuration(d.minutes, t.booking.duration)} — {d.price} €
                   </button>
                 )
               })}
             </div>
           </div>
 
+          {selectedService.toppings && selectedService.toppings.length > 0 && (
           <div className="flex flex-col gap-3">
             <p className="text-sm font-medium text-foreground">
-              Completa tu experiencia eligiendo uno o más toppings:
+              {t.booking.step2.toppingsIntro}
             </p>
             <div className="flex flex-col gap-3">
-              {toppings.map((topping) => {
+              {selectedService.toppings.map((topping) => {
                 const qty = selectedToppings[topping.id] ?? 0
+                const toppingTitle = t.toppingItems[topping.id as keyof typeof t.toppingItems] ?? topping.title
                 return (
                   <div
                     key={topping.id}
@@ -552,10 +574,10 @@ export function BookingStepper() {
                   >
                     <div>
                       <p className="font-medium text-foreground">
-                        {topping.title}
+                        {toppingTitle}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {topping.duration} min — +{topping.price} €
+                        {topping.duration} {t.booking.duration.min} — +{topping.price} €
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -587,13 +609,14 @@ export function BookingStepper() {
               })}
             </div>
           </div>
+          )}
 
           {selectedDuration && (
             <div className="rounded-lg border-2 border-primary/20 bg-primary/5 px-4 py-4">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-medium text-foreground">
-                    Duración total: {formatTotalDuration(totalDuration)}
+                    {t.booking.step2.totalDuration} {formatTotalDuration(totalDuration, t.booking.duration)}
                   </p>
                   <p className="text-lg font-semibold text-primary">
                     {totalPrice} €
@@ -610,14 +633,14 @@ export function BookingStepper() {
               className="gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Atrás
+              {t.booking.step2.back}
             </Button>
             <Button
               onClick={() => setCurrentStep(3)}
               disabled={!selectedDuration}
               className="gap-2"
             >
-              Elegir fecha
+              {t.booking.step2.chooseDate}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
@@ -629,19 +652,19 @@ export function BookingStepper() {
         <div className="flex flex-col gap-6">
           <div className="text-center">
             <h2 className="font-serif text-2xl font-light text-foreground md:text-3xl">
-              <span className="text-balance">
-                ¿Qué día y hora te va bien?
-              </span>
+              <span className="text-balance">{t.booking.step3.title}</span>
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Disponible de lunes a domingo, 9:00–20:00 — {selectedService?.title}
+              {t.booking.step3.availableSub}{" "}
+              {selectedService &&
+                (t.serviceItems[selectedService.id as keyof typeof t.serviceItems]?.title ?? selectedService.title)}
             </p>
           </div>
 
           <div className="flex flex-wrap gap-6">
             <div className="min-w-0 flex-0 basis-[270px]">
               <p className="mb-3 text-sm font-medium text-foreground">
-                Selecciona la fecha
+                {t.booking.step3.selectDate}
               </p>
               <div className="rounded-lg border border-border bg-card p-2">
                 <Calendar
@@ -651,24 +674,24 @@ export function BookingStepper() {
                   disabled={disabledDays}
                   month={calendarMonth}
                   onMonthChange={setCalendarMonth}
-                  locale={es}
+                  locale={dateFnsLocales[locale]}
                   className="text-foreground"
                 />
               </div>
             </div>
             <div className="min-w-0 flex-1 basis-[280px]">
               <p className="mb-3 text-sm font-medium text-foreground">
-                Horarios disponibles
+                {t.booking.step3.availableSlots}
               </p>
               {!selectedDate ? (
                 <div className="flex h-[280px] items-center justify-center rounded-lg border border-dashed border-border text-sm text-muted-foreground">
-                  Elige una fecha para ver los horarios
+                  {t.booking.step3.pickDate}
                 </div>
               ) : loadingSlots ? (
                 <div className="flex h-[280px] flex-col items-center justify-center gap-4 rounded-lg border border-border">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   <p className="text-sm text-muted-foreground">
-                    Consultando disponibilidad...
+                    {t.booking.step3.loading}
                   </p>
                 </div>
               ) : slots.length > 0 ? (
@@ -695,7 +718,7 @@ export function BookingStepper() {
                 </div>
               ) : (
                 <div className="flex h-[280px] items-center justify-center rounded-lg border border-border text-center text-sm text-muted-foreground">
-                  No hay horarios disponibles para este día. Prueba otra fecha.
+                  {t.booking.step3.noSlots}
                 </div>
               )}
             </div>
@@ -713,14 +736,14 @@ export function BookingStepper() {
               className="gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Atrás
+              {t.booking.step3.back}
             </Button>
             <Button
               onClick={() => setCurrentStep(4)}
               disabled={!selectedTime}
               className="gap-2"
             >
-              Ir a datos
+              {t.booking.step3.goToData}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
@@ -732,10 +755,10 @@ export function BookingStepper() {
         <div className="flex flex-col gap-6">
           <div className="text-center">
             <h2 className="font-serif text-2xl font-light text-foreground md:text-3xl">
-              <span className="text-balance">Tus datos de contacto</span>
+              <span className="text-balance">{t.booking.step4.title}</span>
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Para confirmar tu reserva y poder contactarte
+              {t.booking.step4.subtitle}
             </p>
           </div>
 
@@ -743,10 +766,13 @@ export function BookingStepper() {
           <div className="mx-auto w-full max-w-md rounded-lg border border-border bg-secondary/30 p-4">
             <div className="flex flex-col gap-2 text-sm text-foreground">
               <div className="flex flex-wrap items-center justify-center gap-2">
-                <span className="font-medium">{selectedService?.title}</span>
+                <span className="font-medium">
+                  {selectedService &&
+                    (t.serviceItems[selectedService.id as keyof typeof t.serviceItems]?.title ?? selectedService.title)}
+                </span>
                 <span className="text-muted-foreground">·</span>
                 <span>
-                  {selectedDate?.toLocaleDateString("es-ES", {
+                  {selectedDate?.toLocaleDateString(intlLocales[locale], {
                     weekday: "short",
                     day: "numeric",
                     month: "short",
@@ -756,19 +782,22 @@ export function BookingStepper() {
                 <span>{selectedTime}h</span>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2 text-muted-foreground">
-                <span>{formatTotalDuration(totalDuration)}</span>
+                <span>{formatTotalDuration(totalDuration, t.booking.duration)}</span>
                 <span>·</span>
                 <span className="font-medium text-foreground">{totalPrice} €</span>
-                {Object.keys(selectedToppings).length > 0 && (
+                {Object.keys(selectedToppings).length > 0 && selectedService && (
                   <>
                     <span>·</span>
                     <span>
                       {Object.entries(selectedToppings)
                         .filter(([, q]) => q > 0)
-                        .map(
-                          ([id, q]) =>
-                            `${toppings.find((t) => t.id === id)?.title} x${q}`
-                        )
+                        .map(([id, q]) => {
+                          const toppingTitle =
+                            t.toppingItems[id as keyof typeof t.toppingItems] ??
+                            selectedService.toppings.find((top) => top.id === id)?.title ??
+                            ""
+                          return `${toppingTitle} x${q}`
+                        })
                         .join(", ")}
                     </span>
                   </>
@@ -786,12 +815,12 @@ export function BookingStepper() {
           >
             <div className="flex flex-col gap-2">
               <Label htmlFor="name">
-                Nombre completo <span className="text-destructive">*</span>
+                {t.booking.step4.name} <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="name"
                 type="text"
-                placeholder="Tu nombre"
+                placeholder={t.booking.step4.namePlaceholder}
                 required
                 minLength={2}
                 value={formData.name}
@@ -802,12 +831,12 @@ export function BookingStepper() {
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="phone">
-                Teléfono <span className="text-destructive">*</span>
+                {t.booking.step4.phone} <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="phone"
                 type="tel"
-                placeholder="+34 612 345 678"
+                placeholder={t.booking.step4.phonePlaceholder}
                 required
                 minLength={6}
                 value={formData.phone}
@@ -817,13 +846,11 @@ export function BookingStepper() {
               />
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="email">
-                Email (opcional)
-              </Label>
+              <Label htmlFor="email">{t.booking.step4.email}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="tu@email.com"
+                placeholder={t.booking.step4.emailPlaceholder}
                 value={formData.email}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, email: e.target.value }))
@@ -831,10 +858,10 @@ export function BookingStepper() {
               />
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="notes">Notas (opcional)</Label>
+              <Label htmlFor="notes">{t.booking.step4.notes}</Label>
               <Textarea
                 id="notes"
-                placeholder="Cuéntame si hay algo que deba saber: lesiones, alergias, zona de molestia..."
+                placeholder={t.booking.step4.notesPlaceholder}
                 rows={3}
                 value={formData.notes}
                 onChange={(e) =>
@@ -851,7 +878,7 @@ export function BookingStepper() {
                 className="gap-2"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Atrás
+                {t.booking.step4.back}
               </Button>
               <Button
                 type="submit"
@@ -861,11 +888,11 @@ export function BookingStepper() {
                 {submitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Confirmando...
+                    {t.booking.step4.confirming}
                   </>
                 ) : (
                   <>
-                    Confirmar reserva
+                    {t.booking.step4.confirm}
                     <Check className="h-4 w-4" />
                   </>
                 )}
@@ -874,8 +901,7 @@ export function BookingStepper() {
           </form>
 
           <p className="mx-auto max-w-md text-center text-xs text-muted-foreground">
-            Al confirmar, aceptas nuestra política de cancelación: se requiere
-            aviso con más de 12 horas de antelación.
+            {t.booking.step4.cancelPolicy}
           </p>
         </div>
       )}

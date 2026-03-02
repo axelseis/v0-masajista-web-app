@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { createBookingEvent, getAvailableSlots } from "@/lib/google-calendar"
-import { services, toppings } from "@/lib/services"
+import { services } from "@/lib/services"
 
 const toppingItemSchema = z.object({
   id: z.string(),
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     let totalPrice = baseOption.price
     const toppingsInfo: string[] = []
     for (const t of data.toppings ?? []) {
-      const topping = toppings.find((top) => top.id === t.id)
+      const topping = service.toppings.find((top) => top.id === t.id)
       if (topping && t.quantity > 0) {
         totalPrice += topping.price * t.quantity
         toppingsInfo.push(`${topping.title} x${t.quantity}`)
@@ -102,6 +102,7 @@ export async function POST(request: Request) {
       eventId,
       message: "Reserva confirmada correctamente.",
       booking: {
+        serviceId: data.serviceId,
         service: service.title,
         date: data.date,
         time: data.time,
