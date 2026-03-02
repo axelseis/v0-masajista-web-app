@@ -62,7 +62,7 @@ export async function getAvailableSlots(
   const busyPeriods =
     freeBusyResponse.data.calendars?.[calendarId]?.busy || []
 
-  // Minimum start time: for today, slots must be at least 1 hour from now (Europe/Madrid)
+  // Minimum start time: for today, slots must be at least 4 hours from now (Europe/Madrid)
   let minSlotStart: Date | null = null
   const now = new Date()
   const madridParts = new Intl.DateTimeFormat("en-CA", {
@@ -81,7 +81,7 @@ export async function getAvailableSlots(
     const h = parseInt(madridParts.hour, 10)
     const m = parseInt(madridParts.minute, 10)
     const minStart = new Date(dateStr + `T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00+01:00`)
-    minSlotStart = new Date(minStart.getTime() + 60 * 60 * 1000) // +1 hour
+    minSlotStart = new Date(minStart.getTime() + 4 * 60 * 60 * 1000) // +4 hours
   }
 
   // Slots cada 15 min de 9:00 a 20:00 (última reserva empieza a las 20h)
@@ -178,7 +178,7 @@ export async function getAvailableDaysForMonth(
       const minStart = new Date(
         dateStr + `T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00+01:00`
       )
-      minSlotStart = new Date(minStart.getTime() + 60 * 60 * 1000)
+      minSlotStart = new Date(minStart.getTime() + 4 * 60 * 60 * 1000) // +4 hours
     }
 
     let hasSlot = false
@@ -244,10 +244,17 @@ export async function createBookingEvent(
 
   const endTime = endDate.toISOString()
 
+  const hasEmail = !!data.email?.trim()
+  const attendees = hasEmail
+    ? [{ email: data.email!.trim(), displayName: data.name }]
+    : undefined
+
   const event = await calendar.events.insert({
     calendarId,
+    ...(attendees && { sendUpdates: "all" as const }),
     requestBody: {
       summary: `Masaje: ${data.serviceTitle} - ${data.name}`,
+      ...(attendees && { attendees }),
       description: [
         `Cliente: ${data.name}`,
         `Teléfono: ${data.phone}`,
