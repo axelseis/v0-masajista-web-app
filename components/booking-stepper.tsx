@@ -75,6 +75,44 @@ function formatTotalDuration(
   return `${h} h ${m} ${d.min}`
 }
 
+type DisplaySlot =
+  | { type: "available"; time: string }
+  | { type: "occupied"; start: string; end: string }
+
+function mergeSlotsForDisplay(
+  slots: TimeSlot[],
+  slotIntervalMinutes: number
+): DisplaySlot[] {
+  const parseTimeToMinutes = (timeStr: string) => {
+    const [h, m] = timeStr.split(":").map(Number)
+    return h * 60 + m
+  }
+  const minutesToTime = (minutes: number) => {
+    const h = Math.floor(minutes / 60)
+    const m = minutes % 60
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`
+  }
+
+  const result: DisplaySlot[] = []
+  let i = 0
+
+  while (i < slots.length) {
+    if (slots[i].available) {
+      result.push({ type: "available", time: slots[i].time })
+      i++
+    } else {
+      const start = slots[i].time
+      let j = i
+      while (j < slots.length && !slots[j].available) j++
+      const lastOccupied = slots[j - 1].time
+      const endMinutes = parseTimeToMinutes(lastOccupied) + slotIntervalMinutes
+      result.push({ type: "occupied", start, end: minutesToTime(endMinutes) })
+      i = j
+    }
+  }
+  return result
+}
+
 interface FormData {
   name: string
   phone: string
@@ -217,6 +255,17 @@ export function BookingStepper({
       fetchMonthAvailability(calendarMonth, totalDuration, selectedService?.id)
     }
   }, [currentStep, calendarMonth, totalDuration, selectedService?.id, fetchMonthAvailability])
+
+  // Precarga al entrar en la página de reservas (mes actual)
+  useEffect(() => {
+    const duration =
+      totalDuration || (selectedService?.durations?.[0]?.minutes ?? 60)
+    if (duration > 0) {
+      fetchMonthAvailability(calendarMonth, duration, selectedService?.id)
+    }
+    // Solo al montar
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleSubmit = async () => {
     if (!selectedService || !selectedDuration || !selectedDate || !selectedTime) return
@@ -414,8 +463,8 @@ export function BookingStepper({
             const isCompleted = currentStep > step.id
             const StepIcon = step.icon
             return (
-              <li key={step.id} className="flex flex-1 items-center">
-                <div className="flex flex-col items-center gap-2">
+              <li key={step.id} className={`flex flex-${index === steps.length - 1 ? "0" : "1"} items-center`}>
+                <div className="flex h-[70px] w-10 flex-col items-center justify-center gap-2 text-center">
                   <div
                     className={cn(
                       "flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-300",
@@ -714,42 +763,54 @@ export function BookingStepper({
                 />
               </div>
             </div>
-            <div className="min-w-0 flex-1 basis-[280px]">
+            <div className="min-w-0 flex-1 basis-[280px] flex flex-col">
               <p className="mb-3 text-sm font-medium text-foreground">
                 {t.booking.step3.availableSlots}
               </p>
               {!selectedDate ? (
-                <div className="flex h-[280px] items-center justify-center rounded-lg border border-dashed border-border text-sm text-muted-foreground">
+                <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-border text-sm text-muted-foreground">
                   {t.booking.step3.pickDate}
                 </div>
               ) : loadingSlots ? (
-                <div className="flex h-[280px] flex-col items-center justify-center gap-4 rounded-lg border border-border">
+                <div className="flex flex-1 flex-col items-center justify-center gap-4 rounded-lg border border-border">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   <p className="text-sm text-muted-foreground">
                     {t.booking.step3.loading}
                   </p>
                 </div>
               ) : slots.length > 0 ? (
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                  {slots.map((slot) => (
-                    <button
-                      key={slot.time}
-                      onClick={() =>
-                        slot.available && setSelectedTime(slot.time)
-                      }
-                      disabled={!slot.available}
-                      className={cn(
-                        "rounded-lg border-2 px-3 py-2.5 text-center text-sm font-medium transition-all duration-200",
-                        !slot.available
-                          ? "cursor-not-allowed border-border bg-muted text-muted-foreground line-through opacity-50"
-                          : selectedTime === slot.time
+                <div className="grid flex-1 grid-cols-3 gap-2 sm:grid-cols-4">
+                  {mergeSlotsForDisplay(
+                    slots,
+                    settings.calendar.slotIntervalMinutes
+                  ).map((item) =>
+                    item.type === "available" ? (
+                      <button
+                        key={item.time}
+                        onClick={() => setSelectedTime(item.time)}
+                        className={cn(
+                          "rounded-lg border-2 px-3 py-2.5 text-center text-sm font-medium transition-all duration-200",
+                          selectedTime === item.time
                             ? "cursor-pointer border-primary bg-primary text-primary-foreground"
                             : "cursor-pointer border-border bg-card text-foreground hover:border-primary/40"
-                      )}
-                    >
-                      {slot.time}
-                    </button>
-                  ))}
+                        )}
+                      >
+                        {item.time}
+                      </button>
+                    ) : (
+                      <button
+                        key={`${item.start}-${item.end}`}
+                        disabled
+                        className="flex min-h-10 cursor-not-allowed items-center justify-center rounded-lg border-2 border-border bg-muted p-0 opacity-50"
+                      >
+                        <span className="block text-xs leading-tight text-muted-foreground">
+                          {item.start}
+                          <br />
+                          {item.end}
+                        </span>
+                      </button>
+                    )
+                  )}
                 </div>
               ) : (
                 <div className="flex h-[280px] items-center justify-center rounded-lg border border-border text-center text-sm text-muted-foreground">
