@@ -60,6 +60,7 @@ export const en = {
     bookingsSub: "Contact to book",
     instagramSub: "Follow me for updates",
     mapTitle: "Sylvie Le Roux Massage location in Barcelona",
+    whatsapp: "WhatsApp",
   },
   footer: {
     copyright: "© 2026 Sylvie Le Roux. All rights reserved.",

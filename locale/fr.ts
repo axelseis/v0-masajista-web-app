@@ -60,6 +60,7 @@ export const fr = {
     bookingsSub: "Contacter pour réserver",
     instagramSub: "Suis-moi pour les nouveautés",
     mapTitle: "Emplacement de Sylvie Le Roux Massage à Barcelone",
+    whatsapp: "WhatsApp",
   },
   footer: {
     copyright: "© 2026 Sylvie Le Roux. Tous droits réservés.",

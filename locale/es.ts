@@ -60,6 +60,7 @@ export const es = {
     bookingsSub: "Contactar para reservar",
     instagramSub: "Sígueme para novedades",
     mapTitle: "Ubicación de Sylvie Le Roux Masaje en Barcelona",
+    whatsapp: "WhatsApp",
   },
   footer: {
     copyright: "© 2026 Sylvie Le Roux. Todos los derechos reservados.",

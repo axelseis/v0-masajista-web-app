@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Cormorant_Garamond, Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Providers } from '@/components/providers'
+import { WhatsAppFloat } from '@/components/whatsapp-float'
 import './globals.css'
 
 const _cormorant = Cormorant_Garamond({
@@ -38,7 +39,10 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${_cormorant.variable} ${_inter.variable} font-sans antialiased`}>
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <WhatsAppFloat />
+        </Providers>
         <Analytics />
       </body>
     </html>
