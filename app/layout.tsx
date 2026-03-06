@@ -21,21 +21,8 @@ export const metadata: Metadata = {
     'Terapias corporales enfocadas en la reconexión y el bienestar. Masaje Californiano, Deep Tissue, Neurosedante y Acompañamiento Corporal en Sant Andreu, Barcelona.',
   keywords: ['masaje', 'Barcelona', 'terapia corporal', 'bienestar', 'relajación', 'deep tissue', 'masaje californiano'],
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
+    icon: '/blau_logo.svg',
+    apple: '/blau_logo.svg',
   },
 }
 

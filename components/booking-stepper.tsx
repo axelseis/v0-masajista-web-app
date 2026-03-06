@@ -29,6 +29,11 @@ import { es, enUS, fr } from "date-fns/locale"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/locale/i18n"
+import {
+  settings,
+  formatHoursRange,
+  type Locale as SettingsLocale,
+} from "@/lib/settings"
 
 const dateFnsLocales = { es, en: enUS, fr } as const
 const intlLocales = { es: "es-ES", en: "en-GB", fr: "fr-FR" } as const
@@ -91,8 +96,13 @@ type DurationOption = { minutes: number; price: number }
 
 const stepIcons = [Hand, Clock, CalendarDays, User] as const
 
-export function BookingStepper() {
+export function BookingStepper({
+  initialServiceId,
+}: {
+  initialServiceId?: string
+} = {}) {
   const { locale, t } = useLanguage()
+  const serviceFromUrl = services.find((s) => s.id === initialServiceId)
   const steps = [
     { id: 1, label: t.booking.steps.massage, icon: stepIcons[0] },
     { id: 2, label: t.booking.steps.duration, icon: stepIcons[1] },
@@ -100,7 +110,9 @@ export function BookingStepper() {
     { id: 4, label: t.booking.steps.data, icon: stepIcons[3] },
   ]
   const [currentStep, setCurrentStep] = useState(1)
-  const [selectedService, setSelectedService] = useState<Service | null>(null)
+  const [selectedService, setSelectedService] = useState<Service | null>(
+    serviceFromUrl ?? null
+  )
   const [selectedDuration, setSelectedDuration] = useState<DurationOption | null>(null)
   const [selectedToppings, setSelectedToppings] = useState<Record<string, number>>({})
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
@@ -121,14 +133,17 @@ export function BookingStepper() {
   const [, setLoadingMonthAvailability] = useState(false)
 
   const fetchSlots = useCallback(
-    async (date: Date, duration: number) => {
+    async (date: Date, duration: number, serviceId: string | undefined) => {
       setLoadingSlots(true)
       setError(null)
       try {
         const dateStr = toLocalDateString(date)
-        const res = await fetch(
-          `/api/availability?date=${dateStr}&duration=${duration}`
-        )
+        const params = new URLSearchParams({
+          date: dateStr,
+          duration: String(duration),
+        })
+        if (serviceId) params.set("serviceId", serviceId)
+        const res = await fetch(`/api/availability?${params}`)
         const data = await res.json()
         if (res.ok) {
           setSlots(data.slots)
@@ -147,13 +162,16 @@ export function BookingStepper() {
   )
 
   const fetchMonthAvailability = useCallback(
-    async (month: Date, duration: number) => {
+    async (month: Date, duration: number, serviceId: string | undefined) => {
       setLoadingMonthAvailability(true)
       try {
         const monthStr = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}`
-        const res = await fetch(
-          `/api/availability/month?month=${monthStr}&duration=${duration}`
-        )
+        const params = new URLSearchParams({
+          month: monthStr,
+          duration: String(duration),
+        })
+        if (serviceId) params.set("serviceId", serviceId)
+        const res = await fetch(`/api/availability/month?${params}`)
         const data = await res.json()
         if (res.ok) {
           setAvailableDays(data.days)
@@ -190,15 +208,15 @@ export function BookingStepper() {
 
   useEffect(() => {
     if (currentStep === 3 && selectedDate && totalDuration > 0) {
-      fetchSlots(selectedDate, totalDuration)
+      fetchSlots(selectedDate, totalDuration, selectedService?.id)
     }
-  }, [currentStep, selectedDate, totalDuration, fetchSlots])
+  }, [currentStep, selectedDate, totalDuration, selectedService?.id, fetchSlots])
 
   useEffect(() => {
     if (currentStep === 3 && totalDuration > 0) {
-      fetchMonthAvailability(calendarMonth, totalDuration)
+      fetchMonthAvailability(calendarMonth, totalDuration, selectedService?.id)
     }
-  }, [currentStep, calendarMonth, totalDuration, fetchMonthAvailability])
+  }, [currentStep, calendarMonth, totalDuration, selectedService?.id, fetchMonthAvailability])
 
   const handleSubmit = async () => {
     if (!selectedService || !selectedDuration || !selectedDate || !selectedTime) return
@@ -284,10 +302,21 @@ export function BookingStepper() {
     (formData.email.trim() === "" ||
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
 
+  const advanceDays = selectedService
+    ? (selectedService.bookingAdvance ?? 0)
+    : 0
+
+  const getDaysDiff = (a: Date, b: Date) => {
+    const d1 = new Date(a.getFullYear(), a.getMonth(), a.getDate())
+    const d2 = new Date(b.getFullYear(), b.getMonth(), b.getDate())
+    return Math.floor((d1.getTime() - d2.getTime()) / (24 * 60 * 60 * 1000))
+  }
+
   const disabledDays = (date: Date) => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     if (date < today) return true
+    if (advanceDays > 0 && getDaysDiff(date, today) < advanceDays) return true
     const dateStr = toLocalDateString(date)
     if (availableDays[dateStr] === false) return true
     return false
@@ -655,7 +684,13 @@ export function BookingStepper() {
               <span className="text-balance">{t.booking.step3.title}</span>
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              {t.booking.step3.availableSub}{" "}
+              {t.booking.step3.availableSubParts.before}
+              {formatHoursRange(
+                settings.calendar.openingHour,
+                settings.calendar.lastSlotStartHour,
+                locale as SettingsLocale
+              )}
+              {t.booking.step3.availableSubParts.after}{" "}
               {selectedService &&
                 (t.serviceItems[selectedService.id as keyof typeof t.serviceItems]?.title ?? selectedService.title)}
             </p>

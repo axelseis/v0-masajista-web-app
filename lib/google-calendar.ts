@@ -1,4 +1,5 @@
 import { google } from "googleapis"
+import { settings } from "@/lib/settings"
 
 const SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
@@ -47,14 +48,20 @@ export async function getAvailableSlots(
 ): Promise<TimeSlot[]> {
   const { calendar, calendarId } = getCalendarClient()
 
-  const timeMin = new Date(dateStr + "T09:00:00+01:00").toISOString()
-  const timeMax = new Date(dateStr + "T22:00:00+01:00").toISOString()
+  const { openingHour, closingHour, lastSlotStartHour, slotIntervalMinutes, minAdvanceHoursForToday, timezone } =
+    settings.calendar
+  const timeMin = new Date(
+    dateStr + `T${String(openingHour).padStart(2, "0")}:00:00+01:00`
+  ).toISOString()
+  const timeMax = new Date(
+    dateStr + `T${String(closingHour).padStart(2, "0")}:00:00+01:00`
+  ).toISOString()
 
   const freeBusyResponse = await calendar.freebusy.query({
     requestBody: {
       timeMin,
       timeMax,
-      timeZone: "Europe/Madrid",
+      timeZone: timezone,
       items: [{ id: calendarId }],
     },
   })
@@ -62,11 +69,11 @@ export async function getAvailableSlots(
   const busyPeriods =
     freeBusyResponse.data.calendars?.[calendarId]?.busy || []
 
-  // Minimum start time: for today, slots must be at least 4 hours from now (Europe/Madrid)
+  // Minimum start time: for today, slots must be at least N hours from now
   let minSlotStart: Date | null = null
   const now = new Date()
   const madridParts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Madrid",
+    timeZone: timezone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -81,16 +88,20 @@ export async function getAvailableSlots(
     const h = parseInt(madridParts.hour, 10)
     const m = parseInt(madridParts.minute, 10)
     const minStart = new Date(dateStr + `T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00+01:00`)
-    minSlotStart = new Date(minStart.getTime() + 4 * 60 * 60 * 1000) // +4 hours
+    minSlotStart = new Date(
+      minStart.getTime() + minAdvanceHoursForToday * 60 * 60 * 1000
+    )
   }
 
-  // Slots cada 15 min de 9:00 a 20:00 (última reserva empieza a las 20h)
   const slots: TimeSlot[] = []
-  const startMinutes = 9 * 60 // 9:00
-  const endMinutes = 20 * 60 + 15 // último slot 20:00
-  const closingHour = 22
+  const startMinutes = openingHour * 60
+  const endMinutes = lastSlotStartHour * 60 + slotIntervalMinutes
 
-  for (let totalMins = startMinutes; totalMins < endMinutes; totalMins += 15) {
+  for (
+    let totalMins = startMinutes;
+    totalMins < endMinutes;
+    totalMins += slotIntervalMinutes
+  ) {
     const h = Math.floor(totalMins / 60)
     const m = totalMins % 60
     const timeStr = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`
@@ -129,19 +140,27 @@ export async function getAvailableDaysForMonth(
 
   const [year, month] = monthStr.split("-").map(Number)
   const lastDay = new Date(year, month, 0)
+  const {
+    openingHour,
+    closingHour,
+    lastSlotStartHour,
+    slotIntervalMinutes,
+    minAdvanceHoursForToday,
+    timezone,
+  } = settings.calendar
 
   const timeMin = new Date(
-    `${year}-${String(month).padStart(2, "0")}-01T09:00:00+01:00`
+    `${year}-${String(month).padStart(2, "0")}-01T${String(openingHour).padStart(2, "0")}:00:00+01:00`
   ).toISOString()
   const timeMax = new Date(
-    `${year}-${String(month).padStart(2, "0")}-${String(lastDay.getDate()).padStart(2, "0")}T22:00:00+01:00`
+    `${year}-${String(month).padStart(2, "0")}-${String(lastDay.getDate()).padStart(2, "0")}T${String(closingHour).padStart(2, "0")}:00:00+01:00`
   ).toISOString()
 
   const freeBusyResponse = await calendar.freebusy.query({
     requestBody: {
       timeMin,
       timeMax,
-      timeZone: "Europe/Madrid",
+      timeZone: timezone,
       items: [{ id: calendarId }],
     },
   })
@@ -151,7 +170,7 @@ export async function getAvailableDaysForMonth(
 
   const now = new Date()
   const madridParts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Madrid",
+    timeZone: timezone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -164,9 +183,8 @@ export async function getAvailableDaysForMonth(
   const madridDateStr = `${madridParts.year}-${madridParts.month}-${madridParts.day}`
 
   const result: Record<string, boolean> = {}
-  const startMinutes = 9 * 60
-  const endMinutes = 20 * 60 + 15
-  const closingHour = 22
+  const startMinutes = openingHour * 60
+  const endMinutes = lastSlotStartHour * 60 + slotIntervalMinutes
 
   for (let d = 1; d <= lastDay.getDate(); d++) {
     const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`
@@ -178,11 +196,15 @@ export async function getAvailableDaysForMonth(
       const minStart = new Date(
         dateStr + `T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00+01:00`
       )
-      minSlotStart = new Date(minStart.getTime() + 4 * 60 * 60 * 1000) // +4 hours
+      minSlotStart = new Date(minStart.getTime() + minAdvanceHoursForToday * 60 * 60 * 1000)
     }
 
     let hasSlot = false
-    for (let totalMins = startMinutes; totalMins < endMinutes && !hasSlot; totalMins += 15) {
+    for (
+      let totalMins = startMinutes;
+      totalMins < endMinutes && !hasSlot;
+      totalMins += slotIntervalMinutes
+    ) {
       const h = Math.floor(totalMins / 60)
       const m = totalMins % 60
       const slotStart = new Date(
@@ -239,7 +261,8 @@ export async function createBookingEvent(
 
   const startDateTime = `${data.date}T${data.time}:00`
   const startDate = new Date(startDateTime + "+01:00")
-  const eventDurationMinutes = data.duration + 15 // masaje + 15 min para vestuario, etc.
+  const eventDurationMinutes =
+    data.duration + settings.calendar.eventBufferMinutes
   const endDate = new Date(startDate.getTime() + eventDurationMinutes * 60 * 1000)
 
   const endTime = endDate.toISOString()
@@ -272,17 +295,23 @@ export async function createBookingEvent(
         .join("\n"),
       start: {
         dateTime: startDate.toISOString(),
-        timeZone: "Europe/Madrid",
+        timeZone: settings.calendar.timezone,
       },
       end: {
         dateTime: endTime,
-        timeZone: "Europe/Madrid",
+        timeZone: settings.calendar.timezone,
       },
       reminders: {
         useDefault: false,
         overrides: [
-          { method: "email", minutes: 60 },
-          { method: "popup", minutes: 30 },
+          {
+            method: "email",
+            minutes: settings.calendar.reminders.emailMinutes,
+          },
+          {
+            method: "popup",
+            minutes: settings.calendar.reminders.popupMinutes,
+          },
         ],
       },
     },

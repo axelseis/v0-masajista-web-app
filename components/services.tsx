@@ -2,8 +2,10 @@
 
 import { useState } from "react"
 import { ChevronDown } from "lucide-react"
+import Link from "next/link"
 import { services } from "@/lib/services"
 import { useLanguage } from "@/locale/i18n"
+import { Button } from "@/components/ui/button"
 
 export function Services() {
   const [openIndex, setOpenIndex] = useState<number | null>(0)
@@ -60,22 +62,29 @@ export function Services() {
                 >
                   <div className="overflow-hidden">
                     <div className="flex flex-col gap-4 pl-12 md:flex-row md:items-start md:justify-between md:pl-14">
-                      <p className="max-w-lg text-base leading-relaxed text-muted-foreground">
+                      <p className="max-w-lg text-base leading-relaxed text-muted-foreground whitespace-pre-line">
                         {service.description}
                       </p>
-                      <span className="shrink-0 rounded-sm bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground">
-                        {service.durations
-                          .map((d) =>
-                            d.minutes === 60
-                              ? "1 h"
-                              : d.minutes === 75
-                                ? "1 h 15 min"
-                                : d.minutes === 90
-                                  ? "1 h 30 min"
-                                  : `${d.minutes} min`
-                          )
-                          .join(" / ")}
-                      </span>
+                      <div className="flex shrink-0 flex-col items-end gap-3">
+                        <span className="rounded-sm bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground">
+                          {service.durations
+                            .map((d) =>
+                              d.minutes === 60
+                                ? "1 h"
+                                : d.minutes === 75
+                                  ? "1 h 15 min"
+                                  : d.minutes === 90
+                                    ? "1 h 30 min"
+                                    : `${d.minutes} min`
+                            )
+                            .join(" / ")}
+                        </span>
+                        <Button asChild size="sm">
+                          <Link href={`/reservas?service=${service.id}`}>
+                            {t.services.bookButton}
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>

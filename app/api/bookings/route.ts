@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { createBookingEvent, getAvailableSlots } from "@/lib/google-calendar"
-import { services } from "@/lib/services"
+import { services, getBookingAdvanceDays } from "@/lib/services"
+import { settings } from "@/lib/settings"
 
 const toppingItemSchema = z.object({
   id: z.string(),
@@ -10,7 +11,10 @@ const toppingItemSchema = z.object({
 
 const bookingSchema = z.object({
   serviceId: z.string().min(1),
-  duration: z.number().min(30).max(240),
+  duration: z
+    .number()
+    .min(settings.booking.minDurationMinutes)
+    .max(settings.booking.maxDurationMinutes),
   baseDuration: z.number().optional(),
   toppings: z.array(toppingItemSchema).optional().default([]),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -63,6 +67,25 @@ export async function POST(request: Request) {
     const baseOption = service.durations.find((d) => d.minutes === baseDuration)!
     let totalPrice = baseOption.price
     const toppingsInfo: string[] = []
+
+    const advanceDays = getBookingAdvanceDays(service)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const [y, m, d] = data.date.split("-").map(Number)
+    const requestedDate = new Date(y, m - 1, d)
+    const daysDiff = Math.floor(
+      (requestedDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000)
+    )
+    if (daysDiff < advanceDays) {
+      return NextResponse.json(
+        {
+          error:
+            "Esta fecha no cumple la antelación mínima de reserva para este servicio.",
+        },
+        { status: 400 }
+      )
+    }
+
     for (const t of data.toppings ?? []) {
       const topping = service.toppings.find((top) => top.id === t.id)
       if (topping && t.quantity > 0) {

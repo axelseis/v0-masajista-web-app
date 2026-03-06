@@ -2,8 +2,10 @@
 
 import Link from "next/link"
 import { useLanguage } from "@/locale/i18n"
+import { settings } from "@/lib/settings"
 
 export function CtaSection() {
+  const whatsappHref = `https://wa.me/${settings.contact.phone.replace(/\D/g, "")}`
   const { t } = useLanguage()
 
   return (
@@ -30,7 +32,7 @@ export function CtaSection() {
             {t.cta.bookOnline}
           </Link>
           <Link
-            href="https://wa.me/34600000000"
+            href={whatsappHref}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-sm border border-secondary/40 px-8 py-3 text-sm font-medium uppercase tracking-widest text-secondary transition-colors hover:bg-secondary/10"

@@ -25,6 +25,7 @@ export const fr = {
     title: "Soins pour ton bien-être",
     description:
       "Chaque séance est un voyage unique, adapté à ce que ton corps demande à ce moment-là. Découvre les techniques que je propose pour t'aider à lâcher prise, respirer et te reconnecter.",
+    bookButton: "Réserver",
   },
   about: {
     label: "À propos",
@@ -94,7 +95,10 @@ export const fr = {
     },
     step3: {
       title: "Quel jour et quelle heure te conviennent ?",
-      availableSub: "Disponible du lundi au dimanche, 9h00–20h00 —",
+      availableSubParts: {
+        before: "Disponible du lundi au dimanche, ",
+        after: " —",
+      },
       selectDate: "Sélectionne la date",
       availableSlots: "Créneaux disponibles",
       pickDate: "Choisis une date pour voir les horaires",
@@ -165,8 +169,22 @@ export const fr = {
       title: "Massage Californien à 4 Mains",
       shortDescription:
         "La même expérience du Massage Californien portée à un autre niveau avec deux thérapeutes en parfaite synchronie.",
-      description:
-        "Le Massage Californien à 4 Mains offre la même expérience profonde, enveloppante et consciente que le Massage Californien, portée à un autre niveau grâce au travail simultané de deux thérapeutes en parfaite synchronie.\n\nBasé sur des mouvements longs et fluides, un contact enveloppant et une écoute corporelle profonde, ce massage invite à lâcher les tensions, abandonner le contrôle et entrer dans un état de repos très profond.\n\nEn étant réalisé par deux thérapeutes à la fois :\n- Le système nerveux se détend plus rapidement\n- Le mental lâche plus facilement\n- La sensation de soutien, de présence et de continuité s'intensifie\n\nLe corps reçoit des stimuli simultanés et harmonisés, ce qui favorise une intégration globale, une plus grande déconnexion mentale et une expérience sensorielle plus enveloppante.\n\nDurée recommandée : 1h30\n\nRéservation : ce massage doit être réservé au moins une semaine à l'avance pour coordonner les deux thérapeutes.",
+      description: `
+        Le Massage Californien à 4 Mains offre la même expérience profonde, enveloppante et consciente que le Massage Californien, portée à un autre niveau grâce au travail simultané de deux thérapeutes en parfaite synchronie.
+
+        Basé sur des mouvements longs et fluides, un contact enveloppant et une écoute corporelle profonde, ce massage invite à lâcher les tensions, abandonner le contrôle et entrer dans un état de repos très profond.
+
+        En étant réalisé par deux thérapeutes à la fois :
+        - Le système nerveux se détend plus rapidement
+        - Le mental lâche plus facilement
+        - La sensation de soutien, de présence et de continuité s'intensifie
+
+        Le corps reçoit des stimuli simultanés et harmonisés, ce qui favorise une intégration globale, une plus grande déconnexion mentale et une expérience sensorielle plus enveloppante.
+
+        Durée recommandée : 1h30
+
+        Réservation : ce massage doit être réservé au moins une semaine à l'avance pour coordonner les deux thérapeutes.
+      `,
     },
     "deep-tissue": {
       title: "Massage Deep Tissue",
@@ -179,8 +197,20 @@ export const fr = {
       title: "Massage Décontracturant",
       shortDescription:
         "Libère les contractures et tensions musculaires avec des techniques spécifiques.",
-      description:
-        "Un massage profond et précis, conçu pour libérer les tensions accumulées, dissoudre les contractures et retrouver la mobilité naturelle du corps.\n\nIl intègre des pressions, pétrissages, frictions, mobilisations, étirements et d'autres techniques de massage thérapeutique, en adaptant l'intensité selon tes besoins et l'état de tes muscles.\n\nIdéal si tu ressens des raideurs au niveau du cou, des épaules, du dos, des jambes ou des bras dues au stress, aux mauvaises postures ou à la surcharge physique.\n\nBienfaits :\n• Soulagement des douleurs musculaires et des contractures\n• Amélioration de la circulation et de l'oxygénation\n• Sensation de légèreté, de vitalité et de bien-être\n\nDurée recommandée : 1h / 1h15 / 1h30, selon les zones à traiter, l'intensité du tableau et l'acuité des symptômes. Dans certains cas, plusieurs séances peuvent être nécessaires pour une amélioration durable.",
+      description: `
+        Un massage profond et précis, conçu pour libérer les tensions accumulées, dissoudre les contractures et retrouver la mobilité naturelle du corps.
+
+        Il intègre des pressions, pétrissages, frictions, mobilisations, étirements et d'autres techniques de massage thérapeutique, en adaptant l'intensité selon tes besoins et l'état de tes muscles.
+
+        Idéal si tu ressens des raideurs au niveau du cou, des épaules, du dos, des jambes ou des bras dues au stress, aux mauvaises postures ou à la surcharge physique.
+
+        Bienfaits :
+        • Soulagement des douleurs musculaires et des contractures
+        • Amélioration de la circulation et de l'oxygénation
+        • Sensation de légèreté, de vitalité et de bien-être
+
+        Durée recommandée : 1h / 1h15 / 1h30, selon les zones à traiter, l'intensité du tableau et l'acuité des symptômes. Dans certains cas, plusieurs séances peuvent être nécessaires pour une amélioration durable.
+      `,
     },
     neurosedante: {
       title: "Massage Neurosédatif",
@@ -193,8 +223,16 @@ export const fr = {
       title: "Accompagnement Corporel",
       shortDescription:
         "Une séance entièrement personnalisée combinant Californien, Deep Tissue et Massage Thérapeutique.",
-      description:
-        "Une séance de massage thérapeutique entièrement personnalisée qui combine le meilleur du Massage Californien, du Deep Tissue et du Massage Thérapeutique, avec des étirements et mobilisations, pour s'adapter aux besoins spécifiques de chaque personne : de la libération des tensions à l'induction d'un état de calme profond.\n\nBienfaits :\n• Traitement adapté à chaque corps\n• Récupération physique et émotionnelle\n• Plus grande conscience corporelle et connexion intérieure\n\nDurée recommandée : 1h30",
+      description: `
+        Une séance de massage thérapeutique entièrement personnalisée qui combine le meilleur du Massage Californien, du Deep Tissue et du Massage Thérapeutique, avec des étirements et mobilisations, pour s'adapter aux besoins spécifiques de chaque personne : de la libération des tensions à l'induction d'un état de calme profond.
+
+        Bienfaits :
+        • Traitement adapté à chaque corps
+        • Récupération physique et émotionnelle
+        • Plus grande conscience corporelle et connexion intérieure
+
+        Durée recommandée : 1h30
+      `,
     },
   },
 } as const

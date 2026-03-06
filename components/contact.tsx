@@ -3,16 +3,18 @@
 import { MapPin, Clock, Phone, Instagram } from "lucide-react"
 import Link from "next/link"
 import { useLanguage } from "@/locale/i18n"
+import { settings } from "@/lib/settings"
 
 export function Contact() {
   const { t } = useLanguage()
+  const whatsappHref = `https://wa.me/${settings.contact.phone.replace(/\D/g, "")}`
 
   const details = [
     {
       icon: MapPin,
       label: t.contact.location,
-      value: "Carrer de Emilia Pardo Bazán, 5",
-      sub: "08030, Sant Andreu, Barcelona",
+      value: settings.contact.address,
+      sub: settings.contact.addressSub,
     },
     {
       icon: Clock,
@@ -25,7 +27,7 @@ export function Contact() {
       label: t.contact.bookings,
       value: "WhatsApp",
       sub: t.contact.bookingsSub,
-      href: "https://wa.me/34600000000",
+      href: whatsappHref,
     },
     {
       icon: Instagram,

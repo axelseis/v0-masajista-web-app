@@ -10,14 +10,19 @@ export const metadata: Metadata = {
     "Reserva tu sesión de masaje terapéutico en Barcelona. Elige el tratamiento, fecha y hora que mejor te convenga.",
 }
 
-export default function ReservasPage() {
+export default async function ReservasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ service?: string }>
+}) {
+  const params = await searchParams
   return (
     <>
       <Navbar />
       <main className="min-h-screen bg-background px-6 pb-24 pt-32 md:pt-40">
         <div className="mx-auto max-w-3xl">
           <ReservasHeader />
-          <BookingStepper />
+          <BookingStepper initialServiceId={params?.service} />
         </div>
       </main>
       <Footer />
